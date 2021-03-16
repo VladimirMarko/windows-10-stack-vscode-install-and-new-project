@@ -2,15 +2,23 @@
 #
 # You need to launch PowerShell as admin to install stuff with Chocolatey and Chocolatey itself
 
-$pathToParent = $HOME
-$projectName = "MyStackExample"
+param([Parameter(Mandatory=$true)] $Name, $Path = '.')
+
+if (!$Name) {
+  throw 'Please pass a project name with the option "-Name $MyNewStackProjectName".'
+}
 
 function Is-Installed {    
-    param ($commandName)  
-    Get-Command $commandName -ErrorAction SilentlyContinue
+  param ($commandName)  
+  Get-Command $commandName -ErrorAction SilentlyContinue
 }
 
 if (!(Is-Installed "code") -or !(Is-Installed "stack") -or !(Is-Installed "git") ) {
+  $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  if (!$isAdmin) {
+    throw 'I want to install thing with Chocolatey. Please restart PowerShell as administrator.'
+  }
+
   # Install Chocolatey (Windows package manager)
   if (!(Is-Installed "choco" )) {
     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -42,12 +50,12 @@ code --install-extension haskell.haskell
 # You can also put these things into a custom Stack project template.
 
 # Create new Stack project
-cd $pathToParent
-if (Test-Path -Path $projectName -PathType Container) {
-  throw "The project $projectName already exists. Get rid of it or change `$projectName to create a new one."
+cd $Path
+if (Test-Path -Path $Name -PathType Container) {
+  throw "The folder $Name already exists. Get rid of it or use a different `"-Name`" to create a new project."
 }
-stack new $projectName
-cd $projectName
+stack new $Name
+cd $Name
 
 # Needed for the VSCode haskell plugin to use Stack
 # Add to stack.yaml:
